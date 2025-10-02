@@ -23,12 +23,65 @@ SELECT orders.order_id, employees.first_name, employees.last_name
 FROM orders -- primary table
 RIGHT JOIN employees ON orders.employee_id = employees.employee_id;
 
+-- SELF JOIN:
+-- Find each employee and their manager.
+
+SELECT
+  e.first_name AS employee_first,
+  e.last_name AS employee_last,
+  e.title AS employee_title,
+  m.first_name AS manager_first,
+  m.last_name AS manager_last,
+  m.title AS manager_title
+FROM employees AS e -- primary table
+LEFT JOIN employees AS m
+  ON e.reports_to = m.employee_id
+ORDER BY e.last_name, e.first_name;
+
+-- Find products that share the same category.
+
+SELECT
+  p1.product_id AS prod1_id,
+  p1.product_name AS prod1_name,
+  p2.product_id AS prod2_id,
+  p2.product_name AS prod2_name,
+  c.category_name AS shared_category
+FROM products AS p1
+JOIN products AS p2
+  ON p1.category_id = p2.category_id
+  AND p1.product_id < p2.product_id
+JOIN categories AS c
+  ON p1.category_id = c.category_id
+ORDER BY p1.category_id, p1.product_id, p2.product_id;
+
 
 
 -- UNION:
 --- Find all cities from both customers and suppliers. Eliminate duplicates.
 
+SELECT city
+FROM customers
+UNION
+SELECT city
+FROM suppliers
+ORDER BY city;
+
 --- Find all contact names from customers and employees with a label for where each name came from.
+
+SELECT
+  SPLIT_PART(contact_name, ',', 2) AS first_name,
+  SPLIT_PART(contact_name, ',', 1) AS last_name,
+  city,
+  'customers' AS label
+FROM customers
+UNION
+SELECT
+  first_name,
+  last_name,
+  city,
+  'employees' AS label
+FROM employees
+ORDER BY last_name, first_name;
 
 
 
@@ -39,7 +92,20 @@ RIGHT JOIN employees ON orders.employee_id = employees.employee_id;
 ----- 'Low or No Discount' otherwise
 ----- For each product, show a label: 'Discontinued' or 'Available' based on the discontinued flag.
 
-
+SELECT
+  order_details.*,
+  CASE
+    WHEN discount > 0.2 THEN 'High Discount'
+    WHEN discount BETWEEN 0.1 AND 02 THEN 'Medium Discount'
+    ELSE 'Low or No Discount'
+  END AS discount_category,
+  CASE
+    WHEN discontinued = '1' THEN 'Discountinued'
+    Else 'Available'
+  END AS label
+FROM order_details
+JOIN products
+  ON order_details.product_id = products.product_id;
 
 -- Updating, Deleting Data (Use CTEs to preserve original data if needed):
 --- UPDATE: Increase the unit price of all products in the "Beverages" category by 10%.
