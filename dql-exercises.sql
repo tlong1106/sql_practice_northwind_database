@@ -117,7 +117,35 @@ JOIN products
 -- PARTITION BY:
 --- For each employee, list their orders along with a running count of orders they’ve handled (use ROW_NUMBER() or RANK() ----- over a partition by employee).
 
+SELECT
+  o.order_id,
+  o.order_date,
+  c.customer_id,
+  e.first_name,
+  e.last_name,
+  ROW_NUMBER() OVER(PARTITION BY e.employee_id ORDER BY o.order_date) AS row_num,
+  RANK() OVER(PARTITION BY e.employee_id ORDER BY o.order_date) AS rank_num
+FROM employees AS e
+LEFT JOIN orders AS o
+  ON e.employee_id = o.employee_id
+JOIN customers AS c
+  ON o.customer_id = c.customer_id;
+
 --- Show the top 2 most expensive products per category using RANK() or DENSE_RANK().
+
+WITH ranked_products AS (SELECT 
+                           p.product_id,
+                           p.product_name,
+                           c.category_name,
+                           /*DENSE_*/RANK() OVER(PARTITION BY c.category_name ORDER BY p.unit_price) AS rank_num
+                         FROM products AS p
+                         JOIN categories AS c
+                           ON p.category_id = c.category_id
+                         ORDER BY p.unit_price DESC)
+SELECT *
+FROM ranked_products
+WHERE rank_num <= 2
+ORDER BY category_name, rank_num;
 
 
 
@@ -128,6 +156,15 @@ JOIN products
 
 -- Aliasing:
 --- Retrieve product names and their total quantity sold. Use clear table and column aliases to make the query readable.
+
+SELECT
+  p.product_name,
+  SUM(od.quantity) AS quantity_sold
+FROM products AS p
+JOIN order_details AS od
+  ON p.product_id = od.product_id
+GROUP BY p.product_name
+ORDER BY quantity_sold DESC;
 
 
 
@@ -144,12 +181,36 @@ JOIN products
 -- HAVING, GROUP BY:
 --- List all products that have been sold more than 500 units in total.
 
+SELECT
+  p.product_id,
+  p.product_name,
+  SUM(quantity) AS total_quantity_sold
+FROM products AS p
+JOIN order_details AS od
+  ON p.product_id = od.product_id
+GROUP BY p.product_id, p.product_name
+HAVING SUM(quantity) > 500
+ORDER BY total_quantity_sold DESC;
+
 --- For each category, show the average unit price of its products. Only include categories with an average price over $20.
+
+SELECT
+  c.category_id,
+  c.category_name,
+  ROUND(AVG(p.unit_price),2) AS avg_price
+FROM products AS p
+JOIN categories AS c
+  ON p.category_id = c.category_id
+GROUP BY c.category_id, c.category_name
+HAVING AVG(unit_price) > 20
+ORDER BY avg_price DESC;
 
 
 
 -- GETDATE() (or CURRENT_DATE / NOW() in PostgreSQL):
 --- Show all orders placed in the last 30 days using NOW() or CURRENT_DATE.
+
+
 
 --- Calculate the number of days it took to ship each order (ShippedDate - OrderDate). Label late shipments (>7 days).
 
