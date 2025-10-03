@@ -1,224 +1,105 @@
--- 
+-- 1. Aggregate Functions (AVG, COUNT, MIN, MAX, SUM)
 
--- JOINs (INNER, LEFT, RIGHT):
+-- Question:
+-- Analyze customer purchasing behavior between July 4, 2006, and May 6, 2008. For each customer who placed at least five orders in this period, calculate and report their total number of orders, total sales value, average order value, smallest order, and largest order.
 
---- INNER JOIN:
---- List all orders along with the names of the customers who placed them.
+-- 2. Aliasing
 
-SELECT customers.company_name, orders.order_id
-FROM orders
-INNER JOIN customers ON orders.customer_id = customers.customer_id;
+-- Question:
+-- Generate a report of all orders placed between July 4, 2006, and May 6, 2008. Include the order ID, order date, and the calculated total amount for each order, presented with user-friendly column names appropriate for a sales report.
 
---- LEFT JOIN:
---- List all customers and any orders they have placed. Include customers with no orders.
+-- 3. CASE Statements
 
-SELECT customers.company_name, orders.order_id
-FROM customers -- primary table
-LEFT JOIN orders ON orders.customer_id = customers.customer_id;
+-- Question:
+-- Classify all orders placed between July 4, 2006, and May 6, 2008, into three categories based on their total value: "Small", "Medium", or "Large". Generate a report showing each order’s ID, date, total amount, and its corresponding classification.
 
---- RIGHT JOIN:
---- List all orders and their associated employees. Include orders even if the employee is not listed.
+-- 4. Common Table Expressions (CTEs)
 
-SELECT orders.order_id, employees.first_name, employees.last_name
-FROM orders -- primary table
-RIGHT JOIN employees ON orders.employee_id = employees.employee_id;
+-- Question:
+-- Identify the top three customers by total sales within the date range of July 4, 2006, to May 6, 2008. Use a step-by-step approach that separates the calculation of per-customer totals from the final selection of the top customers.
 
--- SELF JOIN:
--- Find each employee and their manager.
+-- 5. Creating Views
 
-SELECT
-  e.first_name AS employee_first,
-  e.last_name AS employee_last,
-  e.title AS employee_title,
-  m.first_name AS manager_first,
-  m.last_name AS manager_last,
-  m.title AS manager_title
-FROM employees AS e -- primary table
-LEFT JOIN employees AS m
-  ON e.reports_to = m.employee_id
-ORDER BY e.last_name, e.first_name;
+-- Question:
+-- Design a reusable view that summarizes each customer’s order count and total purchase amount between July 4, 2006, and May 6, 2008. Once created, query this view to identify high-value customers who made purchases exceeding 10,000 in total during this period.
 
--- Find products that share the same category.
+-- 6. Data Types & Casting
 
-SELECT
-  p1.product_id AS prod1_id,
-  p1.product_name AS prod1_name,
-  p2.product_id AS prod2_id,
-  p2.product_name AS prod2_name,
-  c.category_name AS shared_category
-FROM products AS p1
-JOIN products AS p2
-  ON p1.category_id = p2.category_id
-  AND p1.product_id < p2.product_id
-JOIN categories AS c
-  ON p1.category_id = c.category_id
-ORDER BY p1.category_id, p1.product_id, p2.product_id;
+-- Question:
+-- Prepare a financial report of order totals between July 4, 2006, and May 6, 2008. Ensure all monetary values are formatted as numbers with two decimal places, using appropriate data type conversions where necessary.
 
+-- 7. Date/Time Functions (NOW, CURRENT_DATE, etc.)
 
+-- Question:
+-- Create a dynamic query that lists all orders placed within the last 365 days relative to the current system date. The query should work at any point in time without hardcoding specific dates.
 
--- UNION:
---- Find all cities from both customers and suppliers. Eliminate duplicates.
+-- 8. EXPLAIN / EXPLAIN ANALYZE
 
-SELECT city
-FROM customers
-UNION
-SELECT city
-FROM suppliers
-ORDER BY city;
+-- Question:
+-- Evaluate the performance of a customer sales aggregation query over the date range July 4, 2006, to May 6, 2008. Use database tools to explain how the query is executed, identifying areas where indexes or query changes might improve performance.
 
---- Find all contact names from customers and employees with a label for where each name came from.
+-- 9. INDEX
 
-SELECT
-  SPLIT_PART(contact_name, ',', 2) AS first_name,
-  SPLIT_PART(contact_name, ',', 1) AS last_name,
-  city,
-  'customers' AS label
-FROM customers
-UNION
-SELECT
-  first_name,
-  last_name,
-  city,
-  'employees' AS label
-FROM employees
-ORDER BY last_name, first_name;
+-- Question:
+-- A sales report query that joins orders and order_details over the 2006–2008 period is running slowly. Analyze the schema and propose an indexing strategy to optimize query speed. Create the necessary index and verify the performance improvement.
 
+-- 10. JOINs (INNER, LEFT, RIGHT, Self)
 
+-- Question:
+-- Write three queries that:
 
--- CASE Statements:
---- Add a column to the order details that categorizes the discount as:
------ 'High Discount' if discount > 0.2
------ 'Medium Discount' if discount between 0.1 and 0.2
------ 'Low or No Discount' otherwise
------ For each product, show a label: 'Discontinued' or 'Available' based on the discontinued flag.
+-- List customers who placed at least one order during the target date range.
 
-SELECT
-  order_details.*,
-  CASE
-    WHEN discount > 0.2 THEN 'High Discount'
-    WHEN discount BETWEEN 0.1 AND 02 THEN 'Medium Discount'
-    ELSE 'Low or No Discount'
-  END AS discount_category,
-  CASE
-    WHEN discontinued = '1' THEN 'Discountinued'
-    Else 'Available'
-  END AS label
-FROM order_details
-JOIN products
-  ON order_details.product_id = products.product_id;
+-- List all customers along with their order counts, including those who placed zero orders.
 
--- Updating, Deleting Data (Use CTEs to preserve original data if needed):
---- UPDATE: Increase the unit price of all products in the "Beverages" category by 10%.
+-- Create a report listing employees and their direct managers using a self-join on the employees table.
 
---- DELETE: Delete all records from the orders table where the order date is before January 1, 1997.
+-- 11. JSON Functions (->, ->>, JSONB_EXTRACT_PATH, JSONB_SET)
 
+-- Question:
+-- Assume the orders table contains a JSONB column named extra_data holding metadata like promo codes or shipping notes. Create a report that extracts specific JSON fields, updates them to include new data, and filters rows based on JSON content.
 
+-- 12. Pivoting / Unpivoting
 
--- PARTITION BY:
---- For each employee, list their orders along with a running count of orders they’ve handled (use ROW_NUMBER() or RANK() ----- over a partition by employee).
+-- Question:
+-- Produce a pivot table that displays the number of orders placed in each month between July 2006 and May 2008. Each row should represent a year and each column should represent a month (January to December), showing the count of orders placed.
 
-SELECT
-  o.order_id,
-  o.order_date,
-  c.customer_id,
-  e.first_name,
-  e.last_name,
-  ROW_NUMBER() OVER(PARTITION BY e.employee_id ORDER BY o.order_date) AS row_num,
-  RANK() OVER(PARTITION BY e.employee_id ORDER BY o.order_date) AS rank_num
-FROM employees AS e
-LEFT JOIN orders AS o
-  ON e.employee_id = o.employee_id
-JOIN customers AS c
-  ON o.customer_id = c.customer_id;
+-- 13. Primary Key / Foreign Key
 
---- Show the top 2 most expensive products per category using RANK() or DENSE_RANK().
+-- Question:
+-- List and describe the foreign key relationships in the Northwind database. Then, write a query to validate that all order_details records reference a valid order_id in the orders table, ensuring data integrity.
 
-WITH ranked_products AS (SELECT 
-                           p.product_id,
-                           p.product_name,
-                           c.category_name,
-                           /*DENSE_*/RANK() OVER(PARTITION BY c.category_name ORDER BY p.unit_price) AS rank_num
-                         FROM products AS p
-                         JOIN categories AS c
-                           ON p.category_id = c.category_id
-                         ORDER BY p.unit_price DESC)
-SELECT *
-FROM ranked_products
-WHERE rank_num <= 2
-ORDER BY category_name, rank_num;
+-- 14. Stored Procedures
 
+-- Question:
+-- Create a stored function that accepts a customer ID and a date range, then returns the total number of orders and total purchase value for that customer within the specified period. Use the function to generate results for a sample customer.
 
+-- 15. String Functions (CONCAT, SUBSTRING, TRIM, UPPER, etc.)
 
--- Data Types:
---- Create a new table ArchivedOrders with appropriate data types based on selected columns from the orders table. Include ---- an archive date (DATE type) that defaults to CURRENT_DATE.
+-- Question:
+-- Generate a clean and standardized customer list by transforming company_name fields: trim whitespace, convert to uppercase, and replace common abbreviations (e.g. "LTD." → "LTD"). The final list should be suitable for consistent display in official documents.
 
+-- 16. Subqueries (SELECT, FROM, WHERE)
 
+-- Question:
+-- Analyze customer spending by identifying which customers had total purchases above the overall average in the date range July 4, 2006, to May 6, 2008. Use subqueries in different clauses to structure your analysis.
 
--- Aliasing:
---- Retrieve product names and their total quantity sold. Use clear table and column aliases to make the query readable.
+-- 17. Temp Tables
 
-SELECT
-  p.product_name,
-  SUM(od.quantity) AS quantity_sold
-FROM products AS p
-JOIN order_details AS od
-  ON p.product_id = od.product_id
-GROUP BY p.product_name
-ORDER BY quantity_sold DESC;
+-- Question:
+-- Create a temporary table that stores the total sales per customer in the date range July 4, 2006, to May 6, 2008. Then use this table to join back to the main customers table and identify the top-performing accounts.
 
+-- 18. UNION / UNION ALL
 
+-- Question:
+-- Generate a unified list of customer IDs with a label indicating whether they are “Domestic” or “International”, based on their country. Combine separate queries for each category using a set operation that preserves all matching rows.
 
--- Creating Views:
---- Create a view CustomerOrderSummary that shows:
------ Customer ID
------ Company Name
------ Total Orders
------ Total Quantity Ordered
------ Total Value of Orders (Quantity * Unit Price)
+-- 19. Updating / Deleting Data
 
+-- Question:
+-- Perform data maintenance by identifying and correcting null or invalid entries in the orders or order_details tables during the target date range. For example, assign a default shipper where missing, or delete line items with zero quantity.
 
+-- 20. Window Functions (ROW_NUMBER, RANK, LAG, etc.)
 
--- HAVING, GROUP BY:
---- List all products that have been sold more than 500 units in total.
-
-SELECT
-  p.product_id,
-  p.product_name,
-  SUM(quantity) AS total_quantity_sold
-FROM products AS p
-JOIN order_details AS od
-  ON p.product_id = od.product_id
-GROUP BY p.product_id, p.product_name
-HAVING SUM(quantity) > 500
-ORDER BY total_quantity_sold DESC;
-
---- For each category, show the average unit price of its products. Only include categories with an average price over $20.
-
-SELECT
-  c.category_id,
-  c.category_name,
-  ROUND(AVG(p.unit_price),2) AS avg_price
-FROM products AS p
-JOIN categories AS c
-  ON p.category_id = c.category_id
-GROUP BY c.category_id, c.category_name
-HAVING AVG(unit_price) > 20
-ORDER BY avg_price DESC;
-
-
-
--- GETDATE() (or CURRENT_DATE / NOW() in PostgreSQL):
---- Show all orders placed in the last 30 days using NOW() or CURRENT_DATE.
-
-
-
---- Calculate the number of days it took to ship each order (ShippedDate - OrderDate). Label late shipments (>7 days).
-
-
-
--- Primary Key / Foreign Key:
---- Identify all foreign key relationships between these tables:
------ orders, order_details, customers, employees, products, categories, suppliers.
-
------ Create a diagram or write SQL to show which tables reference products through foreign keys.
-
+-- Question:
+-- For each customer, rank their orders by total value in descending order within the date range July 4, 2006, to May 6, 2008. Additionally, include a column showing the total value of their previous order (if any). Present a comprehensive view of each customer’s order history and behavior.
