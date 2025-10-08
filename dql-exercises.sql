@@ -89,6 +89,8 @@ LIMIT 3;
 -- Question:
 -- Design a reusable view that summarizes each customer’s order count and total purchase amount between July 4, 2006, and May 6, 2008. Once created, query this view to identify high-value customers who made purchases exceeding 10,000 in total during this period.
 
+
+
 -- 6. Data Types & Casting
 
 -- Question:
@@ -140,9 +142,36 @@ WHERE o.order_date BETWEEN most_recent_date.max_date - INTERVAL '365 days' AND m
 
 -- List customers who placed at least one order during the target date range.
 
+SELECT DISTINCT c.customer_id
+FROM customers AS c
+INNER JOIN orders AS o
+  ON c.customer_id = o.customer_id
+WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06';
+
 -- List all customers along with their order counts, including those who placed zero orders.
 
+SELECT
+  c.customer_id,
+  COUNT(order_id) AS order_count
+FROM customers AS c
+LEFT JOIN orders AS o
+  ON c.customer_id = o.customer_id
+GROUP BY c.customer_id
+ORDER BY order_count DESC;
+
 -- Create a report listing employees and their direct managers using a self-join on the employees table.
+
+SELECT
+  e.first_name AS employee_first_name,
+  e.last_name AS employee_last_name,
+  e.title AS employee_title,
+  m.first_name AS manager_first_name,
+  m.last_name AS manager_last_name,
+  m.title AS manager_title
+FROM employees AS e
+JOIN employees AS m
+  ON e.reports_to = m.employee_id
+ORDER BY m.title, e.title;
 
 -- 11. JSON Functions (->, ->>, JSONB_EXTRACT_PATH, JSONB_SET)
 
@@ -166,13 +195,50 @@ WHERE o.order_date BETWEEN most_recent_date.max_date - INTERVAL '365 days' AND m
 
 -- 15. String Functions (CONCAT, SUBSTRING, TRIM, UPPER, etc.)
 
--- Question:
+-- Question: <-- not a good prompt for this data set; company_name standardized already
 -- Generate a clean and standardized customer list by transforming company_name fields: trim whitespace, convert to uppercase, and replace common abbreviations (e.g. "LTD." → "LTD"). The final list should be suitable for consistent display in official documents.
 
 -- 16. Subqueries (SELECT, FROM, WHERE)
 
 -- Question:
 -- Analyze customer spending by identifying which customers had total purchases above the overall average in the date range July 4, 2006, to May 6, 2008. Use subqueries in different clauses to structure your analysis.
+
+SELECT
+  c.company_name,
+  customer_total.order_total,
+  (SELECT ROUND(AVG(inner_totals.order_total),2) -- subquery in SELECT clause: scalar value (e.g. single value) on each table row
+   FROM (
+         SELECT
+          o.customer_id,
+          SUM(od.unit_price*od.quantity) AS order_total
+         FROM orders AS o
+         JOIN order_details AS od
+           ON o.order_id = od.order_id
+         WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06'
+         GROUP BY o.customer_id) AS inner_totals
+         ) AS avg_total_spent -- 15218.64 is the scalar value
+FROM 
+  (SELECT -- subquery in FROM clause: virtual table to show order total per customer
+    o.customer_id AS cust_id,
+    SUM(od.unit_price*od.quantity) AS order_total
+  FROM order_details AS od
+  JOIN orders AS o
+    ON od.order_id = o.order_id
+  WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06'
+  GROUP BY o.customer_id) AS customer_total
+JOIN customers AS c
+  ON customer_total.cust_id = c.customer_id
+WHERE customer_total.order_total > (SELECT AVG(order_total) -- subquery in WHERE clause: filters based on results in FROM clause query
+                                    FROM
+                                      (SELECT
+                                         o.customer_id AS cust_id,
+                                         ROUND(SUM(od.unit_price*od.quantity),2) AS order_total
+                                       FROM order_details AS od
+                                       JOIN orders AS o
+                                         ON od.order_id = o.order_id
+                                       WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06'
+                                       GROUP BY o.customer_id) AS avg_subquery
+                                   );
 
 -- 17. Temp Tables
 
@@ -183,6 +249,18 @@ WHERE o.order_date BETWEEN most_recent_date.max_date - INTERVAL '365 days' AND m
 
 -- Question:
 -- Generate a unified list of customer IDs with a label indicating whether they are “Domestic” or “International”, based on their country. Combine separate queries for each category using a set operation that preserves all matching rows.
+
+SELECT
+  customer_id,
+  'Domestic' AS loc
+FROM customers
+WHERE country = 'USA'
+UNION ALL
+SELECT
+  customer_id,
+  'International' AS loc
+FROM customers
+WHERE country != 'USA';
 
 -- 19. Updating / Deleting Data
 
