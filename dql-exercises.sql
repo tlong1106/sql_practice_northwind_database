@@ -89,7 +89,22 @@ LIMIT 3;
 -- Question:
 -- Design a reusable view that summarizes each customer’s order count and total purchase amount between July 4, 2006, and May 6, 2008. Once created, query this view to identify high-value customers who made purchases exceeding 10,000 in total during this period.
 
+-- CREATE VIEW order_data_view AS SELECT
+--                                  c.customer_id,
+--                                  COUNT(o.order_id) AS order_count,
+--                                  SUM(od.quantity*od.unit_price) AS purchase_total
+--                                FROM customers AS c
+--                                JOIN orders AS o
+--                                  ON c.customer_id = o.customer_id
+--                                JOIN order_details AS od
+--                                  ON o.order_id = od.order_id
+--                                WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06'
+--                                GROUP BY c.customer_id
 
+SELECT *
+FROM order_data_view
+WHERE purchase_total > 10000
+ORDER BY purchase_total DESC;
 
 -- 6. Data Types & Casting
 
@@ -129,6 +144,45 @@ WHERE o.order_date BETWEEN most_recent_date.max_date - INTERVAL '365 days' AND m
 
 -- Question:
 -- Evaluate the performance of a customer sales aggregation query over the date range July 4, 2006, to May 6, 2008. Use database tools to explain how the query is executed, identifying areas where indexes or query changes might improve performance.
+
+-- simple example
+EXPLAIN SELECT * FROM customers ORDER BY customer_id
+
+EXPLAIN ANALYZE SELECT * FROM customers ORDER BY customer_id; -- includes Sort Method/Memory, Planning Time, Execution Time
+
+-- more complex example
+
+EXPLAIN ANALYZE
+SELECT
+  customers.customer_id,
+  COUNT(order_id)
+FROM customers
+JOIN orders
+  ON customers.customer_id = orders.customer_id
+WHERE order_date BETWEEN '2006-07-04' AND '2008-05-06'
+GROUP BY customers.customer_id;
+
+-- 1. Read customers table (FROM clause)
+-- 2. Create a hash table
+-- 3. Filter dates outside of range (WHERE clause)
+-- 4. Read orders table (FROM clause)
+-- 5. Join tables using hash table (JOIN statement)
+-- 6. Recognize GROUP BY
+-- 7. COUNT() to produce order_count
+
+EXPLAIN ANALYZE
+SELECT
+  c.customer_id,
+  COUNT(o.order_id) AS order_count
+FROM customers AS c
+JOIN orders AS o
+  ON c.customer_id = o.customer_id
+WHERE o.order_date BETWEEN '2006-07-04' AND '2008-05-06'
+GROUP BY c.customer_id;
+
+-- Adding aliases reduced times on all steps, specificaly:
+---- Planning Time: 0.175 (without alias) --> 0.173 (with alias)
+---- Execution Time: 1.030 (without alias) --> 0.382 (with alias)
 
 -- 9. INDEX
 
